@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TNG Go+ Calculator</title>
+    <style>
+        /* Base Global Styling */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .calculator-container {
+            display: grid;
+            grid-template-areas: 
+                "input1 input2"
+                "output1 output2"
+                "total total";
+            gap: 20px;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        /* Layout elemen di setiap baris */
+        .input-amount { grid-area: input1; }
+        .input-rate { grid-area: input2; }
+        .output-daily { grid-area: output1; }
+        .output-annual { grid-area: output2; }
+        .output-total { grid-area: total; }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.2);
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .card-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        /* Input Container Styling */
+        .input-group {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px 15px;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-group input {
+            flex: 1;
+            font-size: 1.2rem;
+            border: none;
+            outline: none;
+            background: none;
+            text-align: center;
+        }
+
+        .currency, .percentage-symbol {
+            font-size: 1.3rem;
+            color: #555;
+            font-weight: 600;
+        }
+
+        /* Buttons Section */
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-calculate {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .btn-clear {
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+            color: white;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .calculator-container {
+                grid-template-areas: 
+                    "input1"
+                    "input2"
+                    "output1"
+                    "output2"
+                    "total";
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>💰 TNG Go+ Calculator</h1>
+        <p>Kira keuntungan harian dan tahunan anda dengan mudah</p>
+    </div>
+
+    <form id="calculatorForm">
+        <div class="calculator-container">
+            <!-- Input Fields -->
+            <div class="card input-amount">
+                <div class="card-title">Jumlah dalam TNG Go+</div>
+                <div class="input-group">
+                    <span class="currency">RM</span>
+                    <input type="number" id="amount" placeholder="Enter Amount" min="0" step="0.01" required>
+                </div>
+            </div>
+
+            <div class="card input-rate">
+                <div class="card-title">Kadar Tahunan</div>
+                <div class="input-group">
+                    <input type="number" id="rate" placeholder="Enter Rate" min="0" step="0.1" required>
+		    <span class="percentage-symbol">%</span>
+                </div>
+            </div>
+
+            <!-- Output Fields -->
+            <div class="card output-daily">
+                <div class="card-title">Keuntungan Harian</div>
+                <div class="card-value">
+                    <span class="currency">RM</span>
+                    <span id="daily-profit">0.00</span>
+                </div>
+            </div>
+
+            <div class="card output-annual">
+                <div class="card-title">Jumlah Tahunan</div>
+                <div class="card-value">
+                    <span class="currency">RM</span>
+                    <span id="annual-profit">0.00</span>
+                </div>
+            </div>
+
+            <div class="card output-total">
+                <div class="card-title">Jumlah Pulangan Keseluruhan</div>
+                <div class="card-value">
+                    <span class="currency">RM</span>
+                    <span id="total-return">0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="button-container">
+            <button class="btn btn-calculate" type="submit">Kira Keuntungan</button>
+            <button class="btn btn-clear" type="button" onclick="clearAll()">Kosongkan Semua</button>
+        </div>
+    </form>
+
+    <script>
+        document.getElementById('calculatorForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            calculate();
+        });
+
+        function calculate() {
+            const amount = parseFloat(document.getElementById("amount").value);
+            const rate = parseFloat(document.getElementById("rate").value);
+
+            const dailyProfit = (amount * rate) / 100 / 365;
+            const annualProfit = (amount * rate) / 100;
+            const totalReturn = amount + annualProfit;
+
+            document.getElementById("daily-profit").innerText = dailyProfit.toFixed(4);
+            document.getElementById("annual-profit").innerText = annualProfit.toFixed(2);
+            document.getElementById("total-return").innerText = totalReturn.toFixed(2);
+        }
+
+        function clearAll() {
+            document.getElementById("amount").value = '';
+            document.getElementById("rate").value = '';
+            document.getElementById("daily-profit").innerText = '0.00';
+            document.getElementById("annual-profit").innerText = '0.00';
+            document.getElementById("total-return").innerText = '0.00';
+        }
+    </script>
+</body>
+</html>
