@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TNG Go+ Calculator</title>
     <style>
-        /* Base Global Styling */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -44,17 +43,19 @@
             grid-template-areas: 
                 "input1 input2"
                 "output1 output2"
+                "weekly monthly"
                 "total total";
             gap: 20px;
             max-width: 900px;
             width: 100%;
         }
 
-        /* Layout elemen di setiap baris */
         .input-amount { grid-area: input1; }
         .input-rate { grid-area: input2; }
         .output-daily { grid-area: output1; }
         .output-annual { grid-area: output2; }
+        .output-weekly { grid-area: weekly; }
+        .output-monthly { grid-area: monthly; }
         .output-total { grid-area: total; }
 
         .card {
@@ -65,26 +66,17 @@
             box-shadow: 0 8px 25px rgba(0,0,0,0.15);
             transition: all 0.3s ease;
         }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 35px rgba(0,0,0,0.2);
-        }
-
         .card-title {
             font-size: 1.2rem;
             color: #333;
             margin-bottom: 15px;
             font-weight: 600;
         }
-
         .card-value {
             font-size: 1.8rem;
             font-weight: bold;
             color: #2c3e50;
         }
-
-        /* Input Container Styling */
         .input-group {
             position: relative;
             display: flex;
@@ -96,7 +88,6 @@
             padding: 12px 15px;
             transition: border-color 0.3s ease;
         }
-
         .input-group input {
             flex: 1;
             font-size: 1.2rem;
@@ -105,13 +96,11 @@
             background: none;
             text-align: center;
         }
-
         .currency, .percentage-symbol {
             font-size: 1.3rem;
             color: #555;
             font-weight: 600;
         }
-
         /* Buttons Section */
         .button-container {
             display: flex;
@@ -119,7 +108,6 @@
             gap: 15px;
             margin-top: 30px;
         }
-
         .btn {
             padding: 15px 30px;
             font-size: 1.1rem;
@@ -129,18 +117,29 @@
             font-weight: 600;
             transition: all 0.3s ease;
         }
-
         .btn-calculate {
             background: linear-gradient(45deg, #4CAF50, #45a049);
             color: white;
         }
-
+        .btn-calculate:hover {
+            background: linear-gradient(45deg, #45a049, #3d8b40);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
         .btn-clear {
             background: linear-gradient(45deg, #f44336, #d32f2f);
             color: white;
         }
-
+        .btn-clear:hover {
+            background: linear-gradient(45deg, #d32f2f, #c62828);
+            box-shadow: 0 5px 15px rgba(244, 67, 54, 0.4);
+        }
         /* Responsive Design */
+        @media (max-width: 900px) {
+            .calculator-container {
+                max-width: 100%;
+                padding: 0 10px;
+            }
+        }
         @media (max-width: 768px) {
             .calculator-container {
                 grid-template-areas: 
@@ -148,6 +147,8 @@
                     "input2"
                     "output1"
                     "output2"
+                    "weekly"
+                    "monthly"
                     "total";
                 grid-template-columns: 1fr;
             }
@@ -157,7 +158,7 @@
 <body>
     <div class="header">
         <h1>💰 TNG Go+ Calculator</h1>
-        <p>Kira keuntungan harian dan tahunan anda dengan mudah</p>
+        <p>Kira keuntungan harian, mingguan, bulanan dan tahunan anda dengan mudah</p>
     </div>
 
     <form id="calculatorForm">
@@ -175,7 +176,7 @@
                 <div class="card-title">Kadar Tahunan</div>
                 <div class="input-group">
                     <input type="number" id="rate" placeholder="Enter Rate" min="0" step="0.01" required>
-		    <span class="percentage-symbol">%</span>
+                    <span class="percentage-symbol">%</span>
                 </div>
             </div>
 
@@ -193,6 +194,22 @@
                 <div class="card-value">
                     <span class="currency">RM</span>
                     <span id="annual-profit">0.00</span>
+                </div>
+            </div>
+
+            <div class="card output-weekly">
+                <div class="card-title">Keuntungan Mingguan</div>
+                <div class="card-value">
+                    <span class="currency">RM</span>
+                    <span id="weekly-profit">0.00</span>
+                </div>
+            </div>
+
+            <div class="card output-monthly">
+                <div class="card-title">Keuntungan Bulanan</div>
+                <div class="card-value">
+                    <span class="currency">RM</span>
+                    <span id="monthly-profit">0.00</span>
                 </div>
             </div>
 
@@ -221,11 +238,25 @@
             const amount = parseFloat(document.getElementById("amount").value);
             const rate = parseFloat(document.getElementById("rate").value);
 
+            // Elakkan error jika tiada input
+            if (isNaN(amount) || isNaN(rate) || amount <= 0 || rate < 0) {
+                document.getElementById("daily-profit").innerText = '0.00';
+                document.getElementById("annual-profit").innerText = '0.00';
+                document.getElementById("weekly-profit").innerText = '0.00';
+                document.getElementById("monthly-profit").innerText = '0.00';
+                document.getElementById("total-return").innerText = '0.00';
+                return;
+            }
+
             const dailyProfit = (amount * rate) / 100 / 365;
+            const weeklyProfit = dailyProfit * 7;
+            const monthlyProfit = dailyProfit * 30;
             const annualProfit = (amount * rate) / 100;
             const totalReturn = amount + annualProfit;
 
             document.getElementById("daily-profit").innerText = dailyProfit.toFixed(4);
+            document.getElementById("weekly-profit").innerText = weeklyProfit.toFixed(2);
+            document.getElementById("monthly-profit").innerText = monthlyProfit.toFixed(2);
             document.getElementById("annual-profit").innerText = annualProfit.toFixed(2);
             document.getElementById("total-return").innerText = totalReturn.toFixed(2);
         }
@@ -234,6 +265,8 @@
             document.getElementById("amount").value = '';
             document.getElementById("rate").value = '';
             document.getElementById("daily-profit").innerText = '0.00';
+            document.getElementById("weekly-profit").innerText = '0.00';
+            document.getElementById("monthly-profit").innerText = '0.00';
             document.getElementById("annual-profit").innerText = '0.00';
             document.getElementById("total-return").innerText = '0.00';
         }
