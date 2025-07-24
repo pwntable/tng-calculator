@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TNG Go+ Calculator</title>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -48,6 +50,7 @@
             gap: 20px;
             max-width: 900px;
             width: 100%;
+            margin-bottom: 30px;
         }
 
         .input-amount { grid-area: input1; }
@@ -101,6 +104,16 @@
             color: #555;
             font-weight: 600;
         }
+        /* Chart container style */
+        .chart-container {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto 32px auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.11);
+            padding: 20px;
+        }
         /* Buttons Section */
         .button-container {
             display: flex;
@@ -152,6 +165,9 @@
                     "total";
                 grid-template-columns: 1fr;
             }
+            .chart-container {
+                padding: 10px;
+            }
         }
     </style>
 </head>
@@ -159,6 +175,11 @@
     <div class="header">
         <h1>💰 TNG Go+ Calculator</h1>
         <p>Kira keuntungan harian, mingguan, bulanan dan tahunan anda dengan mudah</p>
+    </div>
+
+    <!-- Chart Section -->
+    <div class="chart-container">
+      <canvas id="investmentChart"></canvas>
     </div>
 
     <form id="calculatorForm">
@@ -171,7 +192,6 @@
                     <input type="number" id="amount" placeholder="Enter Amount" min="0" step="0.01" required>
                 </div>
             </div>
-
             <div class="card input-rate">
                 <div class="card-title">Kadar Tahunan</div>
                 <div class="input-group">
@@ -179,7 +199,6 @@
                     <span class="percentage-symbol">%</span>
                 </div>
             </div>
-
             <!-- Output Fields -->
             <div class="card output-daily">
                 <div class="card-title">Keuntungan Harian</div>
@@ -188,7 +207,13 @@
                     <span id="daily-profit">0.00</span>
                 </div>
             </div>
-
+            <div class="card output-annual">
+                <div class="card-title">Jumlah Tahunan</div>
+                <div class="card-value">
+                    <span class="currency">RM</span>
+                    <span id="annual-profit">0.00</span>
+                </div>
+            </div>
             <div class="card output-weekly">
                 <div class="card-title">Keuntungan Mingguan</div>
                 <div class="card-value">
@@ -196,7 +221,6 @@
                     <span id="weekly-profit">0.00</span>
                 </div>
             </div>
-
             <div class="card output-monthly">
                 <div class="card-title">Keuntungan Bulanan</div>
                 <div class="card-value">
@@ -204,15 +228,6 @@
                     <span id="monthly-profit">0.00</span>
                 </div>
             </div>
-            
-            <div class="card output-annual">
-                <div class="card-title">Keuntungan Tahunan</div>
-                <div class="card-value">
-                    <span class="currency">RM</span>
-                    <span id="annual-profit">0.00</span>
-                </div>
-            </div>
-
             <div class="card output-total">
                 <div class="card-title">Jumlah Pulangan Keseluruhan</div>
                 <div class="card-value">
@@ -221,7 +236,6 @@
                 </div>
             </div>
         </div>
-
         <div class="button-container">
             <button class="btn btn-calculate" type="submit">Kira Keuntungan</button>
             <button class="btn btn-clear" type="button" onclick="clearAll()">Kosongkan Semua</button>
@@ -229,6 +243,9 @@
     </form>
 
     <script>
+        // Chart.js global variable
+        let investmentChart;
+
         document.getElementById('calculatorForm').addEventListener('submit', function(event) {
             event.preventDefault();
             calculate();
@@ -238,13 +255,13 @@
             const amount = parseFloat(document.getElementById("amount").value);
             const rate = parseFloat(document.getElementById("rate").value);
 
-            // Elakkan error jika tiada input
             if (isNaN(amount) || isNaN(rate) || amount <= 0 || rate < 0) {
                 document.getElementById("daily-profit").innerText = '0.00';
-                document.getElementById("annual-profit").innerText = '0.00';
                 document.getElementById("weekly-profit").innerText = '0.00';
                 document.getElementById("monthly-profit").innerText = '0.00';
+                document.getElementById("annual-profit").innerText = '0.00';
                 document.getElementById("total-return").innerText = '0.00';
+                updateChart(0, 0);
                 return;
             }
 
@@ -259,8 +276,51 @@
             document.getElementById("monthly-profit").innerText = monthlyProfit.toFixed(2);
             document.getElementById("annual-profit").innerText = annualProfit.toFixed(2);
             document.getElementById("total-return").innerText = totalReturn.toFixed(2);
+
+            // update chart!
+            updateChart(amount, totalReturn);
         }
 
+        function updateChart(actual, current) {
+            const ctx = document.getElementById('investmentChart').getContext('2d');
+            const data = {
+                labels: ['Actual Investment', 'Current Price'],
+                datasets: [{
+                    label: 'Jumlah (RM)',
+                    data: [actual, current],
+                    backgroundColor: [
+                        'rgba(76, 175, 80, 0.7)',
+                        'rgba(33, 150, 243, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(76,175,80,1)',
+                        'rgba(33,150,243,1)'
+                    ],
+                    borderWidth: 1
+                }]
+            };
+
+            if (investmentChart) {
+                investmentChart.data.datasets[0].data = [actual, current];
+                investmentChart.update();
+            } else {
+                investmentChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: data,
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Reset chart bila clear input
         function clearAll() {
             document.getElementById("amount").value = '';
             document.getElementById("rate").value = '';
@@ -269,7 +329,13 @@
             document.getElementById("monthly-profit").innerText = '0.00';
             document.getElementById("annual-profit").innerText = '0.00';
             document.getElementById("total-return").innerText = '0.00';
+            updateChart(0, 0);
         }
+
+        // Load empty chart first time
+        window.onload = function() {
+            updateChart(0, 0);
+        };
     </script>
 </body>
 </html>
