@@ -12,7 +12,6 @@
             margin: 0;
             padding: 0;
         }
-
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -22,45 +21,39 @@
             flex-direction: column;
             align-items: center;
         }
-
         .header {
             text-align: center;
             color: white;
             margin-bottom: 30px;
         }
-
         .header h1 {
             font-size: 2.5rem;
             margin-bottom: 10px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
-
         .header p {
             font-size: 1.1rem;
             opacity: 0.9;
         }
-
         .calculator-container {
             display: grid;
             grid-template-areas: 
                 "input1 input2"
                 "output1 output2"
-                "weekly monthly"
+                "weekly annual"
                 "total total";
             gap: 20px;
             max-width: 900px;
             width: 100%;
             margin-bottom: 30px;
         }
-
         .input-amount { grid-area: input1; }
         .input-rate { grid-area: input2; }
         .output-daily { grid-area: output1; }
-        .output-annual { grid-area: output2; }
+        .output-monthly { grid-area: output2; }
         .output-weekly { grid-area: weekly; }
-        .output-monthly { grid-area: monthly; }
+        .output-annual { grid-area: annual; }
         .output-total { grid-area: total; }
-
         .card {
             background: white;
             padding: 25px;
@@ -114,6 +107,17 @@
             box-shadow: 0 8px 25px rgba(0,0,0,0.11);
             padding: 20px;
         }
+        /* Error Message Style */
+        #calc-error {
+            display: none;
+            color: #fff;
+            background: #e84118;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-weight: bold;
+            text-align: center;
+        }
         /* Buttons Section */
         .button-container {
             display: flex;
@@ -161,7 +165,7 @@
                     "output1"
                     "output2"
                     "weekly"
-                    "monthly"
+                    "annual"
                     "total";
                 grid-template-columns: 1fr;
             }
@@ -182,6 +186,9 @@
       <canvas id="investmentChart"></canvas>
     </div>
 
+    <!-- Error Message Placeholder -->
+    <div id="calc-error"></div>
+
     <form id="calculatorForm">
         <div class="calculator-container">
             <!-- Input Fields -->
@@ -193,7 +200,7 @@
                 </div>
             </div>
             <div class="card input-rate">
-                <div class="card-title">Kadar Tahunan</div>
+                <div class="card-title">Kadar Keuntungan</div>
                 <div class="input-group">
                     <input type="number" id="rate" placeholder="Enter Rate" min="0" step="0.01" required>
                     <span class="percentage-symbol">%</span>
@@ -207,13 +214,6 @@
                     <span id="daily-profit">0.00</span>
                 </div>
             </div>
-            <div class="card output-weekly">
-                <div class="card-title">Keuntungan Mingguan</div>
-                <div class="card-value">
-                    <span class="currency">RM</span>
-                    <span id="weekly-profit">0.00</span>
-                </div>
-            </div>
             <div class="card output-monthly">
                 <div class="card-title">Keuntungan Bulanan</div>
                 <div class="card-value">
@@ -221,7 +221,14 @@
                     <span id="monthly-profit">0.00</span>
                 </div>
             </div>
-		<div class="card output-annual">
+            <div class="card output-weekly">
+                <div class="card-title">Keuntungan Mingguan</div>
+                <div class="card-value">
+                    <span class="currency">RM</span>
+                    <span id="weekly-profit">0.00</span>
+                </div>
+            </div>
+            <div class="card output-annual">
                 <div class="card-title">Keuntungan Tahunan</div>
                 <div class="card-value">
                     <span class="currency">RM</span>
@@ -252,16 +259,26 @@
         });
 
         function calculate() {
-            const amount = parseFloat(document.getElementById("amount").value);
-            const rate = parseFloat(document.getElementById("rate").value);
+            const amountInput = document.getElementById("amount");
+            const rateInput = document.getElementById("rate");
+            const amount = parseFloat(amountInput.value);
+            const rate = parseFloat(rateInput.value);
+            const errorDiv = document.getElementById("calc-error");
 
+            // Kosongkan error dulu
+            errorDiv.style.display = "none";
+            errorDiv.innerText = "";
+
+            // Validation: Tak isi
+            if (!amountInput.value.trim() || !rateInput.value.trim()) {
+                errorDiv.style.display = "block";
+                errorDiv.innerText = "Sila isi kedua-dua ruangan: Jumlah dan Kadar Tahunan.";
+                return;
+            }
+            // Validation: Salah format/nilai
             if (isNaN(amount) || isNaN(rate) || amount <= 0 || rate < 0) {
-                document.getElementById("daily-profit").innerText = '0.00';
-                document.getElementById("weekly-profit").innerText = '0.00';
-                document.getElementById("monthly-profit").innerText = '0.00';
-                document.getElementById("annual-profit").innerText = '0.00';
-                document.getElementById("total-return").innerText = '0.00';
-                updateChart(0, 0);
+                errorDiv.style.display = "block";
+                errorDiv.innerText = "Sila masukkan nilai yang sah untuk Jumlah dan Kadar Tahunan.";
                 return;
             }
 
@@ -282,73 +299,72 @@
         }
 
         function updateChart(actual, current) {
-    const ctx = document.getElementById('investmentChart').getContext('2d');
-    // Simulasi 12 bulan (atau tukar jika nak period lain)
-    const labels = [
-        'Bulan 0', 'Bulan 1', 'Bulan 2', 'Bulan 3', 'Bulan 4', 'Bulan 5',
-        'Bulan 6', 'Bulan 7', 'Bulan 8', 'Bulan 9', 'Bulan 10', 'Bulan 11', 'Bulan 12'
-    ];
+            const ctx = document.getElementById('investmentChart').getContext('2d');
+            // Simulasi 12 bulan
+            const labels = [
+                'Bulan 0', 'Bulan 1', 'Bulan 2', 'Bulan 3', 'Bulan 4', 'Bulan 5',
+                'Bulan 6', 'Bulan 7', 'Bulan 8', 'Bulan 9', 'Bulan 10', 'Bulan 11', 'Bulan 12'
+            ];
 
-    // Actual: modal sepanjang masa
-    const actualData = Array(labels.length).fill(actual);
+            // Actual: modal sepanjang masa
+            const actualData = Array(labels.length).fill(actual);
 
-    // Current: kira pelaburan terkumpul dengan profit setahun (linear untuk simple)
-    let currentData = [];
-    if (actual > 0 && current > 0) {
-        for (let i = 0; i < labels.length; i++) {
-            // Linear growth (tanpa compounding): modal + annual_profit * i/12
-            let cur = actual + (current - actual) * (i / 12);
-            currentData.push(cur);
-        }
-    } else {
-        currentData = Array(labels.length).fill(0);
-    }
-
-    if (investmentChart) {
-        investmentChart.data.labels = labels;
-        investmentChart.data.datasets[0].data = actualData;
-        investmentChart.data.datasets[1].data = currentData;
-        investmentChart.update();
-    } else {
-        investmentChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Actual Investment',
-                        data: actualData,
-                        borderColor: 'rgba(76, 175, 80, 0.9)',
-                        backgroundColor: 'rgba(76,175,80,0.1)',
-                        fill: false, // tak fill sebab modal saja
-                        borderWidth: 2,
-                        pointRadius: 0,
-                        tension: 0.15,
-                    },
-                    {
-                        label: 'Current Investment',
-                        data: currentData,
-                        borderColor: 'rgba(33, 150, 243, 1)',
-                        backgroundColor: 'rgba(33,150,243,0.14)', // fill area bawah
-                        fill: true,
-                        borderWidth: 2,
-                        pointRadius: 2,
-                        tension: 0.17,
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { display: true }
-                },
-                scales: {
-                    y: { beginAtZero: true }
+            // Current: kira pelaburan terkumpul dengan profit setahun (linear utk simple)
+            let currentData = [];
+            if (actual > 0 && current > 0) {
+                for (let i = 0; i < labels.length; i++) {
+                    let cur = actual + (current - actual) * (i / 12);
+                    currentData.push(cur);
                 }
+            } else {
+                currentData = Array(labels.length).fill(0);
             }
-        });
-    }
-}
+
+            if (investmentChart) {
+                investmentChart.data.labels = labels;
+                investmentChart.data.datasets[0].data = actualData;
+                investmentChart.data.datasets[1].data = currentData;
+                investmentChart.update();
+            } else {
+                investmentChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Actual Investment',
+                                data: actualData,
+                                borderColor: 'rgba(76, 175, 80, 0.9)',
+                                backgroundColor: 'rgba(76,175,80,0.1)',
+                                fill: false, 
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                tension: 0.15,
+                            },
+                            {
+                                label: 'Current Investment',
+                                data: currentData,
+                                borderColor: 'rgba(33, 150, 243, 1)',
+                                backgroundColor: 'rgba(33,150,243,0.14)',
+                                fill: true,
+                                borderWidth: 2,
+                                pointRadius: 2,
+                                tension: 0.17,
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: true }
+                        },
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+            }
+        }
 
         // Reset chart bila clear input
         function clearAll() {
@@ -359,6 +375,8 @@
             document.getElementById("monthly-profit").innerText = '0.00';
             document.getElementById("annual-profit").innerText = '0.00';
             document.getElementById("total-return").innerText = '0.00';
+            document.getElementById("calc-error").style.display = "none";
+            document.getElementById("calc-error").innerText = "";
             updateChart(0, 0);
         }
 
