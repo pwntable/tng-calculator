@@ -207,13 +207,6 @@
                     <span id="daily-profit">0.00</span>
                 </div>
             </div>
-            <div class="card output-annual">
-                <div class="card-title">Jumlah Tahunan</div>
-                <div class="card-value">
-                    <span class="currency">RM</span>
-                    <span id="annual-profit">0.00</span>
-                </div>
-            </div>
             <div class="card output-weekly">
                 <div class="card-title">Keuntungan Mingguan</div>
                 <div class="card-value">
@@ -226,6 +219,13 @@
                 <div class="card-value">
                     <span class="currency">RM</span>
                     <span id="monthly-profit">0.00</span>
+                </div>
+            </div>
+		<div class="card output-annual">
+                <div class="card-title">Keuntungan Tahunan</div>
+                <div class="card-value">
+                    <span class="currency">RM</span>
+                    <span id="annual-profit">0.00</span>
                 </div>
             </div>
             <div class="card output-total">
@@ -282,43 +282,73 @@
         }
 
         function updateChart(actual, current) {
-            const ctx = document.getElementById('investmentChart').getContext('2d');
-            const data = {
-                labels: ['Actual Investment', 'Current Price'],
-                datasets: [{
-                    label: 'Jumlah (RM)',
-                    data: [actual, current],
-                    backgroundColor: [
-                        'rgba(76, 175, 80, 0.7)',
-                        'rgba(33, 150, 243, 0.7)'
-                    ],
-                    borderColor: [
-                        'rgba(76,175,80,1)',
-                        'rgba(33,150,243,1)'
-                    ],
-                    borderWidth: 1
-                }]
-            };
+    const ctx = document.getElementById('investmentChart').getContext('2d');
+    // Simulasi 12 bulan (atau tukar jika nak period lain)
+    const labels = [
+        'Bulan 0', 'Bulan 1', 'Bulan 2', 'Bulan 3', 'Bulan 4', 'Bulan 5',
+        'Bulan 6', 'Bulan 7', 'Bulan 8', 'Bulan 9', 'Bulan 10', 'Bulan 11', 'Bulan 12'
+    ];
 
-            if (investmentChart) {
-                investmentChart.data.datasets[0].data = [actual, current];
-                investmentChart.update();
-            } else {
-                investmentChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: data,
-                    options: {
-                        responsive: true,
-                        plugins: {
-                            legend: { display: false }
-                        },
-                        scales: {
-                            y: { beginAtZero: true }
-                        }
-                    }
-                });
-            }
+    // Actual: modal sepanjang masa
+    const actualData = Array(labels.length).fill(actual);
+
+    // Current: kira pelaburan terkumpul dengan profit setahun (linear untuk simple)
+    let currentData = [];
+    if (actual > 0 && current > 0) {
+        for (let i = 0; i < labels.length; i++) {
+            // Linear growth (tanpa compounding): modal + annual_profit * i/12
+            let cur = actual + (current - actual) * (i / 12);
+            currentData.push(cur);
         }
+    } else {
+        currentData = Array(labels.length).fill(0);
+    }
+
+    if (investmentChart) {
+        investmentChart.data.labels = labels;
+        investmentChart.data.datasets[0].data = actualData;
+        investmentChart.data.datasets[1].data = currentData;
+        investmentChart.update();
+    } else {
+        investmentChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Actual Investment',
+                        data: actualData,
+                        borderColor: 'rgba(76, 175, 80, 0.9)',
+                        backgroundColor: 'rgba(76,175,80,0.1)',
+                        fill: false, // tak fill sebab modal saja
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        tension: 0.15,
+                    },
+                    {
+                        label: 'Current Investment',
+                        data: currentData,
+                        borderColor: 'rgba(33, 150, 243, 1)',
+                        backgroundColor: 'rgba(33,150,243,0.14)', // fill area bawah
+                        fill: true,
+                        borderWidth: 2,
+                        pointRadius: 2,
+                        tension: 0.17,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: true }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    }
+}
 
         // Reset chart bila clear input
         function clearAll() {
